@@ -5,7 +5,7 @@ Jerry's local system command center.
 ## Run
 
 ```sh
-npm start
+go run .
 ```
 
 Then open:
@@ -17,7 +17,14 @@ http://localhost:4173
 Set a different port if needed:
 
 ```sh
-PORT=5000 npm start
+PORT=5000 go run .
+```
+
+Build a single binary:
+
+```sh
+go build -o jsys .
+./jsys
 ```
 
 ## What It Shows
@@ -31,5 +38,5 @@ PORT=5000 npm start
 - Git branch and working tree state
 - Event stream for pressure, hot processes, and storage thresholds
 
-The first version is zero-dependency: Node.js serves the app, samples the local
-machine, and streams metrics to the browser through Server-Sent Events.
+The backend is a zero-dependency Go service. It serves the browser UI, samples
+the local machine, and streams metrics through Server-Sent Events.
