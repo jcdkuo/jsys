@@ -14,25 +14,23 @@
           <h1 id="hostName">Initializing telemetry</h1>
         </div>
         <div class="topbar__meta">
+          <span id="aiSummary" class="badge badge--ai">AI -- / Remote --</span>
           <span id="connectionBadge" class="badge badge--warn">Connecting</span>
           <span id="clock">--:--:--</span>
         </div>
       </header>
 
       <section class="dashboard">
-        <aside class="panel identity-panel">
+        <section class="panel ai-panel">
           <div class="section-title">
-            <span>Machine</span>
-            <b id="uptime">--</b>
+            <span>AI Agents</span>
+            <b id="remoteCount">0 remote</b>
           </div>
-          <dl class="spec-list">
-            <div><dt>Platform</dt><dd id="platform">--</dd></div>
-            <div><dt>Arch</dt><dd id="arch">--</dd></div>
-            <div><dt>Go</dt><dd id="nodeVersion">--</dd></div>
-            <div><dt>Git</dt><dd id="gitStatus">--</dd></div>
-          </dl>
-          <div class="port-strip" id="ports"></div>
-        </aside>
+          <div class="ai-layout">
+            <div class="agent-strip" id="aiAgents"></div>
+            <div class="remote-list" id="remotes"></div>
+          </div>
+        </section>
 
         <section class="hero-panel">
           <div class="core-wrap">
@@ -45,13 +43,13 @@
           </div>
         </section>
 
-        <aside class="panel event-panel">
+        <section class="panel process-panel">
           <div class="section-title">
-            <span>Event Stream</span>
-            <b id="eventCount">0</b>
+            <span>Top Processes</span>
+            <b>CPU / RAM</b>
           </div>
-          <ol class="event-list" id="events"></ol>
-        </aside>
+          <div class="process-list" id="processes"></div>
+        </section>
 
         <section class="metric-grid">
           <article class="metric-card" data-metric="cpu">
@@ -90,13 +88,27 @@
           </article>
         </section>
 
-        <section class="panel process-panel">
+        <aside class="panel identity-panel">
           <div class="section-title">
-            <span>Top Processes</span>
-            <b>CPU / RAM</b>
+            <span>Machine</span>
+            <b id="uptime">--</b>
           </div>
-          <div class="process-list" id="processes"></div>
-        </section>
+          <dl class="spec-list">
+            <div><dt>Platform</dt><dd id="platform">--</dd></div>
+            <div><dt>Arch</dt><dd id="arch">--</dd></div>
+            <div><dt>Go</dt><dd id="nodeVersion">--</dd></div>
+            <div><dt>Git</dt><dd id="gitStatus">--</dd></div>
+          </dl>
+          <div class="port-strip" id="ports"></div>
+        </aside>
+
+        <aside class="panel event-panel">
+          <div class="section-title">
+            <span>Event Stream</span>
+            <b id="eventCount">0</b>
+          </div>
+          <ol class="event-list" id="events"></ol>
+        </aside>
 
         <section class="panel trend-panel">
           <div class="section-title">

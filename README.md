@@ -35,6 +35,8 @@ go build -o jsys .
 - Network throughput
 - Top CPU and memory processes
 - Listening ports
+- Local Codex, Cursor, and Claude agent counts
+- Active SSH remote links grouped by target and source
 - Git branch and working tree state
 - Event stream for pressure, hot processes, and storage thresholds
 

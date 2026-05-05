@@ -114,11 +114,11 @@ h1 {
 
 .dashboard {
   display: grid;
-  grid-template-columns: minmax(245px, 0.85fr) minmax(420px, 1.45fr) minmax(290px, 1fr);
+  grid-template-columns: minmax(330px, 1fr) minmax(420px, 1.12fr) minmax(360px, 1fr);
   grid-template-areas:
-    "identity hero events"
+    "ai hero process"
     "metrics metrics metrics"
-    "process process trend";
+    "identity events trend";
   gap: 16px;
 }
 
@@ -157,7 +157,7 @@ h1 {
 .hero-panel {
   grid-area: hero;
   display: grid;
-  min-height: 420px;
+  min-height: 390px;
   place-items: center;
 }
 
@@ -174,6 +174,10 @@ h1 {
 
 .process-panel {
   grid-area: process;
+}
+
+.ai-panel {
+  grid-area: ai;
 }
 
 .trend-panel {
@@ -290,7 +294,7 @@ h1 {
   z-index: 1;
   display: grid;
   gap: 11px;
-  max-height: 340px;
+  max-height: 300px;
   margin: 0;
   padding: 0;
   overflow: auto;
@@ -427,7 +431,7 @@ h1 {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 10px 18px;
 }
 
@@ -455,18 +459,98 @@ h1 {
   font-variant-numeric: tabular-nums;
 }
 
+.ai-layout {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.agent-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.agent-pill {
+  display: grid;
+  min-height: 92px;
+  padding: 13px;
+  border: 1px solid rgba(49, 215, 211, 0.18);
+  border-radius: 8px;
+  background: rgba(49, 215, 211, 0.07);
+  align-content: space-between;
+}
+
+.agent-pill span,
+.agent-pill small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.agent-pill strong {
+  color: var(--text);
+  font-size: 2.25rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.remote-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px 14px;
+}
+
+.remote-row {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 11px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.remote-row strong,
+.remote-row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.remote-row strong {
+  font-size: 0.9rem;
+}
+
+.remote-row span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
 @media (max-width: 1180px) {
   .dashboard {
     grid-template-columns: 1fr 1fr;
     grid-template-areas:
       "hero hero"
-      "identity events"
+      "ai ai"
+      "process process"
       "metrics metrics"
-      "process trend";
+      "identity events"
+      "trend trend";
   }
 
   .metric-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ai-layout,
+  .remote-list {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -485,6 +569,7 @@ h1 {
     grid-template-areas:
       "hero"
       "metrics"
+      "ai"
       "identity"
       "events"
       "process"
@@ -496,7 +581,8 @@ h1 {
   }
 
   .metric-grid,
-  .process-list {
+  .process-list,
+  .agent-strip {
     grid-template-columns: 1fr;
   }
 }

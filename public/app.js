@@ -9,6 +9,7 @@ const series = {
 const elements = {
   hostName: document.querySelector("#hostName"),
   connectionBadge: document.querySelector("#connectionBadge"),
+  aiSummary: document.querySelector("#aiSummary"),
   clock: document.querySelector("#clock"),
   uptime: document.querySelector("#uptime"),
   platform: document.querySelector("#platform"),
@@ -29,6 +30,9 @@ const elements = {
   events: document.querySelector("#events"),
   eventCount: document.querySelector("#eventCount"),
   processes: document.querySelector("#processes"),
+  aiAgents: document.querySelector("#aiAgents"),
+  remotes: document.querySelector("#remotes"),
+  remoteCount: document.querySelector("#remoteCount"),
   loadAverage: document.querySelector("#loadAverage")
 };
 
@@ -104,10 +108,50 @@ function render(sample) {
   renderDisks(sample.disks);
   renderEvents(sample.events);
   renderProcesses(sample.processes);
+  renderAI(sample.ai);
   drawLineChart(canvases.cpu, series.cpu, { max: 100, color: colors.cpu });
   drawLineChart(canvases.memory, series.memory, { max: 100, color: colors.memory });
   drawLineChart(canvases.network, series.network, { max: Math.max(1, ...series.network) * 1.25, color: colors.network });
   drawLineChart(canvases.load, series.load, { max: Math.max(sample.cpu.cores, ...series.load, 1), color: colors.load, fill: true });
+}
+
+function renderAI(ai) {
+  const agents = ai?.agents || [];
+  const remotes = ai?.remotes || [];
+  const sessionCount = remotes.reduce((sum, remote) => sum + remote.sessions, 0);
+  const codex = agents.find((agent) => agent.name === "Codex")?.count ?? 0;
+  const cursor = agents.find((agent) => agent.name === "Cursor")?.count ?? 0;
+  const claude = agents.find((agent) => agent.name === "Claude")?.count ?? 0;
+  elements.aiSummary.textContent = `AI Cx ${codex} / Cu ${cursor} / Cl ${claude} / R ${sessionCount}`;
+  elements.remoteCount.textContent = `${sessionCount} remote`;
+
+  elements.aiAgents.replaceChildren(
+    ...agents.map((agent) => {
+      const node = document.createElement("div");
+      node.className = "agent-pill";
+      node.innerHTML = `
+        <span>${escapeHtml(agent.name)}</span>
+        <strong>${agent.count}</strong>
+        <small>${escapeHtml(agent.scope)}</small>
+      `;
+      return node;
+    })
+  );
+
+  elements.remotes.replaceChildren(
+    ...(remotes.length ? remotes : [{ target: "no-active-ssh", source: "remote", sessions: 0, pids: [] }]).map((remote) => {
+      const node = document.createElement("div");
+      node.className = "remote-row";
+      const meta = remote.sessions
+        ? `${remote.source} / ${remote.sessions} session${remote.sessions === 1 ? "" : "s"}${remote.tunnel ? " / tunnel" : ""}`
+        : "no live remote links";
+      node.innerHTML = `
+        <strong title="${escapeHtml(remote.target)}">${escapeHtml(remote.target)}</strong>
+        <span>${escapeHtml(meta)}</span>
+      `;
+      return node;
+    })
+  );
 }
 
 function renderPorts(ports) {
