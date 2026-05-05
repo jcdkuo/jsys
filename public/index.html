@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>jsys Command Center</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Jsys Command Center</p>
+          <h1 id="hostName">Initializing telemetry</h1>
+        </div>
+        <div class="topbar__meta">
+          <span id="connectionBadge" class="badge badge--warn">Connecting</span>
+          <span id="clock">--:--:--</span>
+        </div>
+      </header>
+
+      <section class="dashboard">
+        <aside class="panel identity-panel">
+          <div class="section-title">
+            <span>Machine</span>
+            <b id="uptime">--</b>
+          </div>
+          <dl class="spec-list">
+            <div><dt>Platform</dt><dd id="platform">--</dd></div>
+            <div><dt>Arch</dt><dd id="arch">--</dd></div>
+            <div><dt>Node</dt><dd id="nodeVersion">--</dd></div>
+            <div><dt>Git</dt><dd id="gitStatus">--</dd></div>
+          </dl>
+          <div class="port-strip" id="ports"></div>
+        </aside>
+
+        <section class="hero-panel">
+          <div class="core-wrap">
+            <canvas id="coreCanvas" width="520" height="520" aria-label="System health core"></canvas>
+            <div class="core-readout">
+              <span id="healthState">Stable</span>
+              <strong id="healthScore">0</strong>
+              <small>system pressure</small>
+            </div>
+          </div>
+        </section>
+
+        <aside class="panel event-panel">
+          <div class="section-title">
+            <span>Event Stream</span>
+            <b id="eventCount">0</b>
+          </div>
+          <ol class="event-list" id="events"></ol>
+        </aside>
+
+        <section class="metric-grid">
+          <article class="metric-card" data-metric="cpu">
+            <div class="metric-card__header">
+              <span>CPU</span>
+              <b id="cpuValue">--%</b>
+            </div>
+            <canvas id="cpuChart" height="100"></canvas>
+            <div class="core-grid" id="coreGrid"></div>
+          </article>
+
+          <article class="metric-card" data-metric="memory">
+            <div class="metric-card__header">
+              <span>Memory</span>
+              <b id="memoryValue">--%</b>
+            </div>
+            <canvas id="memoryChart" height="100"></canvas>
+            <p id="memoryDetail" class="metric-detail">--</p>
+          </article>
+
+          <article class="metric-card" data-metric="disk">
+            <div class="metric-card__header">
+              <span>Storage</span>
+              <b id="diskValue">--%</b>
+            </div>
+            <div class="disk-stack" id="disks"></div>
+          </article>
+
+          <article class="metric-card" data-metric="network">
+            <div class="metric-card__header">
+              <span>Network</span>
+              <b id="networkValue">--</b>
+            </div>
+            <canvas id="networkChart" height="100"></canvas>
+            <p id="networkDetail" class="metric-detail">--</p>
+          </article>
+        </section>
+
+        <section class="panel process-panel">
+          <div class="section-title">
+            <span>Top Processes</span>
+            <b>CPU / RAM</b>
+          </div>
+          <div class="process-list" id="processes"></div>
+        </section>
+
+        <section class="panel trend-panel">
+          <div class="section-title">
+            <span>Load Signature</span>
+            <b id="loadAverage">--</b>
+          </div>
+          <canvas id="loadChart" height="180"></canvas>
+        </section>
+      </section>
+    </main>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
