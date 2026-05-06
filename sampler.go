@@ -105,14 +105,14 @@ func (s *Sampler) broadcast(snap *Snapshot) {
 func runtimeNumCPU() int { return runtime.NumCPU() }
 func isLinux() bool      { return runtime.GOOS == "linux" }
 
-func (s *Sampler) cpuUsageLocked() CPU {
+func (s *Sampler) cpuUsageLocked(rawLinuxCPU []cpuTimes) CPU {
 	cores := runtimeNumCPU()
 	total := 0.0
 	perCore := []float64{}
 	estimated := false
 
 	if isLinux() {
-		perCore = s.linuxCPUUsageLocked()
+		perCore = s.linuxCPUUsageLocked(rawLinuxCPU)
 		if len(perCore) > 0 {
 			for _, v := range perCore {
 				total += v
@@ -140,8 +140,7 @@ func (s *Sampler) cpuUsageLocked() CPU {
 	}
 }
 
-func (s *Sampler) linuxCPUUsageLocked() []float64 {
-	current := readLinuxCPUTimes()
+func (s *Sampler) linuxCPUUsageLocked(current []cpuTimes) []float64 {
 	if len(current) == 0 {
 		return nil
 	}
@@ -164,8 +163,7 @@ func (s *Sampler) linuxCPUUsageLocked() []float64 {
 	return values
 }
 
-func (s *Sampler) networkUsageLocked(now time.Time) Network {
-	current := networkCounters()
+func (s *Sampler) networkUsageLocked(now time.Time, current map[string]netCounters) Network {
 	interval := now.Sub(s.previousAt).Seconds()
 	if interval < 0.25 {
 		interval = 0.25
@@ -206,9 +204,16 @@ func (s *Sampler) networkUsageLocked(now time.Time) Network {
 func (s *Sampler) sample() *Snapshot {
 	now := time.Now()
 
+	// I/O outside the lock — Darwin netstat can take up to 1200 ms.
+	var rawCPU []cpuTimes
+	if isLinux() {
+		rawCPU = readLinuxCPUTimes()
+	}
+	rawNet := networkCounters()
+
 	s.mu.Lock()
-	cpu := s.cpuUsageLocked()
-	network := s.networkUsageLocked(now)
+	cpu := s.cpuUsageLocked(rawCPU)
+	network := s.networkUsageLocked(now, rawNet)
 	s.mu.Unlock()
 
 	memory := memoryUsage()
