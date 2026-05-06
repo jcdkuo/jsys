@@ -43,11 +43,12 @@ type Health struct {
 }
 
 type CPU struct {
-	Total       float64   `json:"total"`
-	PerCore     []float64 `json:"perCore"`
-	Cores       int       `json:"cores"`
-	Model       string    `json:"model"`
-	LoadAverage []float64 `json:"loadAverage"`
+	Total            float64   `json:"total"`
+	PerCore          []float64 `json:"perCore"`
+	PerCoreEstimated bool      `json:"perCoreEstimated"`
+	Cores            int       `json:"cores"`
+	Model            string    `json:"model"`
+	LoadAverage      []float64 `json:"loadAverage"`
 }
 
 type Memory struct {
