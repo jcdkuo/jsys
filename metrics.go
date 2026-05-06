@@ -52,19 +52,6 @@ func readLinuxCPUTimes() []cpuTimes {
 	return times
 }
 
-func darwinCPUUsage() float64 {
-	output := run(1200*time.Millisecond, "ps", "-A", "-o", "%cpu=")
-	if output == "" {
-		return loadFallback()
-	}
-
-	total := 0.0
-	for _, line := range strings.Split(output, "\n") {
-		total += parseFloat(line)
-	}
-	return clamp(total/float64(runtime.NumCPU()), 0, 100)
-}
-
 func visualPerCore(total float64, cores int) []float64 {
 	if cores < 1 {
 		cores = 1

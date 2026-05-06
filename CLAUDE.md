@@ -39,7 +39,7 @@ Every metric sampler picks an implementation by `runtime.GOOS`:
 - **Linux**: reads `/proc/stat`, `/proc/meminfo`, `/proc/net/dev`, `/proc/loadavg`, `/proc/uptime`, `/proc/cpuinfo`, `/etc/os-release` directly.
 - **Darwin (and BSD-ish fallback)**: shells out via `util.go` `run()` to `ps`, `df`, `lsof`, `sysctl`, `vm_stat`, `netstat`, `sw_vers`-style tools.
 
-When adding a new metric, follow the same pattern: a top-level function that branches on GOOS to a `linux*` or `darwin*`/`bsd*` helper. Subprocess calls always go through `run()` which applies a context timeout and returns `""` on any error (errors are silently swallowed — be aware when debugging missing data).
+When adding a new metric, follow the same pattern: a top-level function that branches on GOOS to a `linux*` or `darwin*`/`bsd*` helper. Subprocess calls always go through `run()` which applies a context timeout and returns `""` on any error (errors are silently swallowed — be aware when debugging missing data). The one exception is `Sampler.runDarwinTopStreamer`, which uses `exec.CommandContext` + `StdoutPipe` directly because it needs to stream a long-lived child rather than capture one-shot output.
 
 ### Shared sampler
 
