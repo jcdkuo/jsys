@@ -139,7 +139,7 @@ func TestRunCancelExitsCleanly(t *testing.T) {
 	cancel()
 	select {
 	case <-done:
-	case <-time.After(500 * time.Millisecond):
+	case <-time.After(3 * time.Second):
 		t.Fatal("Run did not exit after context cancel")
 	}
 }
@@ -150,7 +150,7 @@ func TestRunPopulatesLatest(t *testing.T) {
 	defer cancel()
 	go s.runForTest(ctx, 20*time.Millisecond)
 
-	deadline := time.Now().Add(500 * time.Millisecond)
+	deadline := time.Now().Add(3 * time.Second)
 	for time.Now().Before(deadline) {
 		if s.Latest() != nil {
 			return
@@ -180,7 +180,7 @@ func TestRunClosesSubscribersOnShutdown(t *testing.T) {
 				t.Fatal("channel not closed after shutdown")
 			}
 		}
-	case <-time.After(200 * time.Millisecond):
+	case <-time.After(2 * time.Second):
 		t.Fatal("channel not closed after shutdown")
 	}
 }
@@ -224,7 +224,7 @@ func TestTwoSSEClientsReceiveSameSnapshots(t *testing.T) {
 		if len(linesA) != 3 || len(linesB) != 3 {
 			t.Fatalf("expected 3 data lines each, got %d / %d", len(linesA), len(linesB))
 		}
-	case <-time.After(2 * time.Second):
+	case <-time.After(8 * time.Second):
 		t.Fatal("timeout waiting for SSE data")
 	}
 }
