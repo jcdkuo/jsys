@@ -2,53 +2,55 @@ package main
 
 import (
 	"net/http"
-	"time"
 )
 
-func snapshotHandler(w http.ResponseWriter, r *http.Request) {
-	sample, err := sampleSystem()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+func makeSnapshotHandler(s *Sampler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		snap := s.Latest()
+		if snap == nil {
+			w.Header().Set("Retry-After", "1")
+			http.Error(w, "sampler warming up", http.StatusServiceUnavailable)
+			return
+		}
+		writeJSON(w, snap)
 	}
-	writeJSON(w, sample)
 }
 
-func eventsHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/event-stream")
-	w.Header().Set("Cache-Control", "no-cache")
-	w.Header().Set("Connection", "keep-alive")
-	w.Header().Set("X-Accel-Buffering", "no")
+func makeEventsHandler(s *Sampler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.Header().Set("Cache-Control", "no-cache")
+		w.Header().Set("Connection", "keep-alive")
+		w.Header().Set("X-Accel-Buffering", "no")
 
-	flusher, ok := w.(http.Flusher)
-	if !ok {
-		http.Error(w, "streaming unsupported", http.StatusInternalServerError)
-		return
-	}
-
-	sendSSE(w, "ready", map[string]bool{"ok": true})
-	flusher.Flush()
-
-	ticker := time.NewTicker(time.Second)
-	defer ticker.Stop()
-
-	if sample, err := sampleSystem(); err == nil {
-		sendSSE(w, "metrics", sample)
-		flusher.Flush()
-	}
-
-	for {
-		select {
-		case <-r.Context().Done():
+		flusher, ok := w.(http.Flusher)
+		if !ok {
+			http.Error(w, "streaming unsupported", http.StatusInternalServerError)
 			return
-		case <-ticker.C:
-			sample, err := sampleSystem()
-			if err != nil {
-				sendSSE(w, "error", map[string]string{"message": err.Error()})
-			} else {
-				sendSSE(w, "metrics", sample)
-			}
+		}
+
+		sendSSE(w, "ready", map[string]bool{"ok": true})
+		flusher.Flush()
+
+		if snap := s.Latest(); snap != nil {
+			sendSSE(w, "metrics", snap)
 			flusher.Flush()
+		}
+
+		ch, unsub := s.Subscribe()
+		defer unsub()
+
+		for {
+			select {
+			case <-r.Context().Done():
+				return
+			case snap, ok := <-ch:
+				if !ok {
+					return
+				}
+				sendSSE(w, "metrics", snap)
+				flusher.Flush()
+			}
 		}
 	}
 }

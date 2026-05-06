@@ -586,3 +586,15 @@ h1 {
     grid-template-columns: 1fr;
   }
 }
+
+.core-grid[data-estimated="true"] span {
+  opacity: 0.6;
+}
+
+.metric-card__header .estimated-tag {
+  margin-left: 0.5rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+}
