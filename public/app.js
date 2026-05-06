@@ -104,7 +104,7 @@ function render(sample) {
   elements.loadAverage.textContent = sample.cpu.loadAverage.map((value) => value.toFixed(2)).join(" / ");
 
   renderPorts(sample.ports);
-  renderCores(sample.cpu.perCore);
+  renderCores(sample.cpu.perCore, !!sample.cpu.perCoreEstimated);
   renderDisks(sample.disks);
   renderEvents(sample.events);
   renderProcesses(sample.processes);
@@ -164,7 +164,20 @@ function renderPorts(ports) {
   );
 }
 
-function renderCores(cores) {
+function renderCores(cores, estimated) {
+  elements.coreGrid.dataset.estimated = estimated ? "true" : "false";
+
+  const cpuHeader = document.querySelector('article[data-metric="cpu"] .metric-card__header');
+  const existingTag = cpuHeader.querySelector(".estimated-tag");
+  if (estimated && !existingTag) {
+    const tag = document.createElement("small");
+    tag.className = "estimated-tag";
+    tag.textContent = "(estimated)";
+    cpuHeader.appendChild(tag);
+  } else if (!estimated && existingTag) {
+    existingTag.remove();
+  }
+
   elements.coreGrid.replaceChildren(
     ...cores.map((value) => {
       const node = document.createElement("span");
