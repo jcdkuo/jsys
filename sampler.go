@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"math"
 	"runtime"
 	"sort"
@@ -261,3 +262,43 @@ func (s *Sampler) sample() *Snapshot {
 
 	return snap
 }
+
+func (s *Sampler) Run(ctx context.Context) {
+	s.runForTest(ctx, time.Second)
+}
+
+func (s *Sampler) runForTest(ctx context.Context, interval time.Duration) error {
+	if !isLinux() {
+		go s.runDarwinTopStreamer(ctx)
+	}
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			s.closeAllSubscribers()
+			return nil
+		case <-ticker.C:
+			if ctx.Err() != nil {
+				s.closeAllSubscribers()
+				return nil
+			}
+			snap := s.sample()
+			s.latest.Store(snap)
+			s.broadcast(snap)
+		}
+	}
+}
+
+func (s *Sampler) closeAllSubscribers() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for ch := range s.subscribers {
+		close(ch)
+	}
+	s.subscribers = map[chan *Snapshot]*subState{}
+}
+
+// runDarwinTopStreamer is implemented in Task 7. Stub for now:
+func (s *Sampler) runDarwinTopStreamer(ctx context.Context) {}
