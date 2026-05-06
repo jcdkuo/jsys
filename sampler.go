@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"math"
+	"os/exec"
+	"regexp"
 	"runtime"
 	"sort"
 	"strings"
@@ -300,5 +303,39 @@ func (s *Sampler) closeAllSubscribers() {
 	s.subscribers = map[chan *Snapshot]*subState{}
 }
 
-// runDarwinTopStreamer is implemented in Task 7. Stub for now:
-func (s *Sampler) runDarwinTopStreamer(ctx context.Context) {}
+var darwinTopRegex = regexp.MustCompile(`CPU usage:\s*([\d.]+)%\s*user,\s*([\d.]+)%\s*sys`)
+
+func parseDarwinTopLine(line string) (float64, bool) {
+	match := darwinTopRegex.FindStringSubmatch(line)
+	if len(match) != 3 {
+		return 0, false
+	}
+	total := parseFloat(match[1]) + parseFloat(match[2])
+	return clamp(total, 0, 100), true
+}
+
+func (s *Sampler) runDarwinTopStreamer(ctx context.Context) {
+	cmd := exec.CommandContext(ctx, "top", "-l", "0", "-s", "1", "-n", "0")
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return
+	}
+	if err := cmd.Start(); err != nil {
+		return
+	}
+	defer cmd.Wait()
+
+	scanner := bufio.NewScanner(stdout)
+	firstSeen := false
+	for scanner.Scan() {
+		total, ok := parseDarwinTopLine(scanner.Text())
+		if !ok {
+			continue
+		}
+		if !firstSeen {
+			firstSeen = true
+			continue // discard "since boot" cumulative
+		}
+		s.darwinCPU.Store(&darwinCPU{total: total, at: time.Now()})
+	}
+}

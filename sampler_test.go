@@ -228,3 +228,29 @@ func TestTwoSSEClientsReceiveSameSnapshots(t *testing.T) {
 		t.Fatal("timeout waiting for SSE data")
 	}
 }
+
+func TestParseDarwinTopLine(t *testing.T) {
+	cases := []struct {
+		name    string
+		line    string
+		wantOK  bool
+		wantTot float64
+	}{
+		{"happy", "CPU usage: 4.12% user, 2.88% sys, 93.00% idle", true, 7.00},
+		{"high",  "CPU usage: 78.50% user, 12.50% sys, 9.00% idle", true, 91.00},
+		{"zero",  "CPU usage: 0.00% user, 0.00% sys, 100.00% idle", true, 0.00},
+		{"miss",  "Processes: 612 total, 3 running", false, 0},
+		{"junk",  "", false, 0},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, ok := parseDarwinTopLine(tc.line)
+			if ok != tc.wantOK {
+				t.Fatalf("ok = %v, want %v", ok, tc.wantOK)
+			}
+			if ok && got != tc.wantTot {
+				t.Fatalf("got %.2f, want %.2f", got, tc.wantTot)
+			}
+		})
+	}
+}
