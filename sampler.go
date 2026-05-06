@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"context"
+	"log"
 	"math"
 	"os/exec"
 	"regexp"
@@ -320,9 +321,11 @@ func (s *Sampler) runDarwinTopStreamer(ctx context.Context) {
 	cmd := exec.CommandContext(ctx, "top", "-l", "0", "-s", "1", "-n", "0")
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
+		log.Printf("top streamer stdout pipe: %v", err)
 		return
 	}
 	if err := cmd.Start(); err != nil {
+		log.Printf("top streamer start: %v", err)
 		return
 	}
 	defer cmd.Wait()

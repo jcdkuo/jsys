@@ -3,21 +3,32 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log"
 	"math"
 	"net/http"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
+
+var loggedRunErrors sync.Map
 
 func run(timeout time.Duration, command string, args ...string) string {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	output, err := exec.CommandContext(ctx, command, args...).Output()
 	if err != nil {
+		if !errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			key := command + "|" + err.Error()
+			if _, seen := loggedRunErrors.LoadOrStore(key, struct{}{}); !seen {
+				log.Printf("run %s %v: %v", command, args, err)
+			}
+		}
 		return ""
 	}
 	return strings.TrimSpace(string(output))

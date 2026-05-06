@@ -346,8 +346,10 @@ func cpuModel() string {
 
 func platformName() string {
 	if runtime.GOOS == "darwin" {
-		release := strings.TrimSpace(run(800*time.Millisecond, "uname", "-r"))
-		if release != "" {
+		if version := strings.TrimSpace(run(800*time.Millisecond, "sw_vers", "-productVersion")); version != "" {
+			return "macOS " + version
+		}
+		if release := strings.TrimSpace(run(800*time.Millisecond, "uname", "-r")); release != "" {
 			return "Darwin " + release
 		}
 	}

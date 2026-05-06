@@ -30,7 +30,11 @@ func main() {
 	mux.HandleFunc("/events", makeEventsHandler(sampler))
 	mux.Handle("/", http.FileServer(http.Dir("public")))
 
-	server := &http.Server{Addr: addr, Handler: mux}
+	server := &http.Server{
+		Addr:              addr,
+		Handler:           mux,
+		ReadHeaderTimeout: 5 * time.Second,
+	}
 
 	go func() {
 		<-ctx.Done()
