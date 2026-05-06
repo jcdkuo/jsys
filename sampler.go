@@ -315,6 +315,8 @@ func parseDarwinTopLine(line string) (float64, bool) {
 }
 
 func (s *Sampler) runDarwinTopStreamer(ctx context.Context) {
+	defer s.darwinCPU.Store(nil)
+
 	cmd := exec.CommandContext(ctx, "top", "-l", "0", "-s", "1", "-n", "0")
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
