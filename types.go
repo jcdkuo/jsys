@@ -1,19 +1,5 @@
 package main
 
-import (
-	"sync"
-	"time"
-)
-
-type appState struct {
-	mu          sync.Mutex
-	previousCPU []cpuTimes
-	previousNet map[string]netCounters
-	previousAt  time.Time
-	eventID     int64
-	events      []Event
-}
-
 type Snapshot struct {
 	Timestamp int64         `json:"timestamp"`
 	Host      Host          `json:"host"`

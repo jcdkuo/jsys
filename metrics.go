@@ -12,62 +12,10 @@ import (
 	"time"
 )
 
-func cpuUsage() CPU {
-	cores := runtime.NumCPU()
-	total := 0.0
-	perCore := []float64{}
-
-	if runtime.GOOS == "linux" {
-		perCore = linuxCPUUsage()
-		if len(perCore) > 0 {
-			for _, value := range perCore {
-				total += value
-			}
-			total /= float64(len(perCore))
-			cores = len(perCore)
-		}
-	} else {
-		total = darwinCPUUsage()
-		perCore = visualPerCore(total, cores)
-	}
-
-	return CPU{
-		Total:       clamp(total, 0, 100),
-		PerCore:     perCore,
-		Cores:       cores,
-		Model:       cpuModel(),
-		LoadAverage: loadAverage(),
-	}
-}
-
-func linuxCPUUsage() []float64 {
-	current := readLinuxCPUTimes()
-	if len(current) == 0 {
-		return nil
-	}
-
-	state.mu.Lock()
-	defer state.mu.Unlock()
-
-	before := state.previousCPU
-	state.previousCPU = current
-	if len(before) != len(current) {
-		return visualPerCore(loadFallback(), len(current))
-	}
-
-	values := make([]float64, 0, len(current))
-	for i, now := range current {
-		old := before[i]
-		idle := float64(now.idle - old.idle)
-		total := float64(sumCPU(now) - sumCPU(old))
-		value := 0.0
-		if total > 0 {
-			value = ((total - idle) / total) * 100
-		}
-		values = append(values, clamp(value, 0, 100))
-	}
-	return values
-}
+var (
+	processPattern = regexp.MustCompile(`^\s*(\d+)\s+(.+?)\s+([\d.]+)\s+([\d.]+)\s*$`)
+	portPattern    = regexp.MustCompile(`[:.]([0-9]+)([[:space:]]|\)|$)`)
+)
 
 func readLinuxCPUTimes() []cpuTimes {
 	if runtime.GOOS != "linux" {
@@ -239,51 +187,6 @@ func diskUsage() []Disk {
 		}
 	}
 	return disks
-}
-
-func networkUsage() Network {
-	now := time.Now()
-	current := networkCounters()
-
-	state.mu.Lock()
-	before := state.previousNet
-	interval := now.Sub(state.previousAt).Seconds()
-	if interval < 0.25 {
-		interval = 0.25
-	}
-	state.previousNet = current
-	state.previousAt = now
-	state.mu.Unlock()
-
-	var interfaces []NetInterface
-	for name, stats := range current {
-		if strings.HasPrefix(name, "lo") {
-			continue
-		}
-		old, ok := before[name]
-		if !ok {
-			old = stats
-		}
-		rxRate := math.Max(float64(stats.rxBytes-old.rxBytes)/interval, 0)
-		txRate := math.Max(float64(stats.txBytes-old.txBytes)/interval, 0)
-		interfaces = append(interfaces, NetInterface{
-			Name: name, RxBytes: stats.rxBytes, TxBytes: stats.txBytes, RxRate: rxRate, TxRate: txRate,
-		})
-	}
-
-	sort.Slice(interfaces, func(i, j int) bool {
-		return interfaces[i].RxRate+interfaces[i].TxRate > interfaces[j].RxRate+interfaces[j].TxRate
-	})
-	if len(interfaces) > 5 {
-		interfaces = interfaces[:5]
-	}
-
-	network := Network{Interfaces: interfaces}
-	for _, item := range interfaces {
-		network.RxRate += item.RxRate
-		network.TxRate += item.TxRate
-	}
-	return network
 }
 
 func networkCounters() map[string]netCounters {

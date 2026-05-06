@@ -11,8 +11,8 @@ func main() {
 	addr := host + ":" + port
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/api/snapshot", snapshotHandler)
-	mux.HandleFunc("/events", eventsHandler)
+	// mux.HandleFunc("/api/snapshot", snapshotHandler)
+	// mux.HandleFunc("/events", eventsHandler)
 	mux.Handle("/", http.FileServer(http.Dir("public")))
 
 	log.Printf("jsys command center: http://%s", addr)
