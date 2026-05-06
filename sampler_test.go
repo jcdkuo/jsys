@@ -44,3 +44,80 @@ func TestMultipleSubscribersAreIndependent(t *testing.T) {
 		t.Fatal("expected distinct channels")
 	}
 }
+
+func TestBroadcastDeliversToReadyConsumer(t *testing.T) {
+	s := New()
+	ch, _ := s.Subscribe()
+	snap := &Snapshot{Timestamp: 42}
+
+	s.broadcast(snap)
+
+	select {
+	case got := <-ch:
+		if got.Timestamp != 42 {
+			t.Fatalf("got %d, want 42", got.Timestamp)
+		}
+	case <-time.After(50 * time.Millisecond):
+		t.Fatal("expected snapshot on channel")
+	}
+}
+
+func TestBroadcastReplacesStaleSnapshotForSlowConsumer(t *testing.T) {
+	s := New()
+	ch, _ := s.Subscribe()
+
+	s.broadcast(&Snapshot{Timestamp: 1})
+	s.broadcast(&Snapshot{Timestamp: 2})
+
+	got := <-ch
+	if got.Timestamp != 2 {
+		t.Fatalf("expected newest snapshot (2), got %d", got.Timestamp)
+	}
+}
+
+func TestBroadcastClosesAfterThreeConsecutiveDrops(t *testing.T) {
+	s := New()
+	ch, _ := s.Subscribe()
+
+	s.broadcast(&Snapshot{Timestamp: 1}) // delivered, drops=0
+	s.broadcast(&Snapshot{Timestamp: 2}) // replaces, drops=1
+	s.broadcast(&Snapshot{Timestamp: 3}) // replaces, drops=2
+	s.broadcast(&Snapshot{Timestamp: 4}) // replaces, drops=3 → close
+
+	deadline := time.After(100 * time.Millisecond)
+	for {
+		select {
+		case _, ok := <-ch:
+			if !ok {
+				return
+			}
+		case <-deadline:
+			t.Fatal("expected channel to close after 3 consecutive drops")
+		}
+	}
+}
+
+func TestBroadcastResetsDropCountAfterSuccessfulDelivery(t *testing.T) {
+	s := New()
+	ch, _ := s.Subscribe()
+
+	s.broadcast(&Snapshot{Timestamp: 1}) // drops=0, buffered
+	s.broadcast(&Snapshot{Timestamp: 2}) // drops=1
+	<-ch                                  // drain
+	s.broadcast(&Snapshot{Timestamp: 3}) // delivered, drops=0
+	s.broadcast(&Snapshot{Timestamp: 4}) // drops=1
+	s.broadcast(&Snapshot{Timestamp: 5}) // drops=2
+
+	// channel should still be open
+	select {
+	case got, ok := <-ch:
+		if !ok {
+			t.Fatal("channel closed prematurely")
+		}
+		if got.Timestamp != 5 {
+			t.Fatalf("expected newest (5), got %d", got.Timestamp)
+		}
+	case <-time.After(50 * time.Millisecond):
+		t.Fatal("expected snapshot on channel")
+	}
+}

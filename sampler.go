@@ -55,3 +55,28 @@ func (s *Sampler) unsubscribe(ch chan *Snapshot) {
 func (s *Sampler) Latest() *Snapshot {
 	return s.latest.Load()
 }
+
+func (s *Sampler) broadcast(snap *Snapshot) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for ch, st := range s.subscribers {
+		select {
+		case ch <- snap:
+			st.drops = 0
+		default:
+			select {
+			case <-ch:
+			default:
+			}
+			select {
+			case ch <- snap:
+			default:
+			}
+			st.drops++
+			if st.drops >= 3 {
+				delete(s.subscribers, ch)
+				close(ch)
+			}
+		}
+	}
+}
