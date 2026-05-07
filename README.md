@@ -20,6 +20,18 @@ Set a different port if needed:
 PORT=5000 go run .
 ```
 
+Run on all network interfaces for remote access:
+
+```sh
+./scripts/run-remote.sh
+```
+
+Then open:
+
+```text
+http://<machine-ip>:9527
+```
+
 Build a single binary:
 
 ```sh
