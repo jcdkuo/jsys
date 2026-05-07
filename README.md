@@ -39,6 +39,31 @@ go build -o jsys .
 ./jsys
 ```
 
+Build a Linux x86_64 binary from macOS:
+
+```sh
+./scripts/build-linux-amd64.sh
+```
+
+The output is:
+
+```text
+dist/jsys-linux-amd64
+```
+
+Build both macOS arm64 and Linux x86_64 binaries:
+
+```sh
+./scripts/build-all.sh
+```
+
+The outputs are:
+
+```text
+dist/jsys-darwin-arm64
+dist/jsys-linux-amd64
+```
+
 ## What It Shows
 
 - Live CPU pressure with per-core activity blocks

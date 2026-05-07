@@ -28,7 +28,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/snapshot", makeSnapshotHandler(sampler))
 	mux.HandleFunc("/events", makeEventsHandler(sampler))
-	mux.Handle("/", http.FileServer(http.Dir("public")))
+	mux.Handle("/", publicFileServer())
 
 	server := &http.Server{
 		Addr:              addr,
