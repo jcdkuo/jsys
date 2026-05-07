@@ -1,10 +1,34 @@
 const historyLimit = 90;
+const SERIES_STORAGE_KEY = "jsys.series.v1";
 const series = {
   cpu: [],
   memory: [],
   network: [],
   load: []
 };
+
+function loadSeriesFromStorage() {
+  try {
+    const raw = localStorage.getItem(SERIES_STORAGE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    for (const key of Object.keys(series)) {
+      if (Array.isArray(parsed[key])) {
+        series[key] = parsed[key].slice(-historyLimit).filter((v) => Number.isFinite(v));
+      }
+    }
+  } catch {
+    // ignore — corrupt or unavailable storage shouldn't break the page
+  }
+}
+
+function saveSeriesToStorage() {
+  try {
+    localStorage.setItem(SERIES_STORAGE_KEY, JSON.stringify(series));
+  } catch {
+    // ignore quota / privacy mode
+  }
+}
 
 const elements = {
   hostName: document.querySelector("#hostName"),
@@ -139,6 +163,8 @@ function render(sample) {
   drawLineChart(canvases.memory, series.memory, { max: 100, color: colors.memory });
   drawLineChart(canvases.network, series.network, { max: Math.max(1, ...series.network) * 1.25, color: colors.network });
   drawLineChart(canvases.load, series.load, { max: Math.max(sample.cpu.cores, ...series.load, 1), color: colors.load, fill: true });
+
+  saveSeriesToStorage();
 }
 
 function renderAI(ai) {
@@ -467,5 +493,6 @@ setInterval(() => {
   elements.clock.textContent = new Date().toLocaleTimeString();
 }, 500);
 
+loadSeriesFromStorage();
 connect();
 drawCore();

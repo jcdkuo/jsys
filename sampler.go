@@ -58,7 +58,19 @@ func New() *Sampler {
 		nodeVer:  runtime.Version(),
 		cpuModel: cpuModel(),
 	}
+	s.events, s.eventID = loadState()
 	return s
+}
+
+func (s *Sampler) persist() {
+	s.mu.Lock()
+	events := make([]Event, len(s.events))
+	copy(events, s.events)
+	eventID := s.eventID
+	s.mu.Unlock()
+	if err := saveState(events, eventID); err != nil {
+		log.Printf("saveState: %v", err)
+	}
 }
 
 func (s *Sampler) Subscribe() (<-chan *Snapshot, func()) {
@@ -278,13 +290,20 @@ func (s *Sampler) runForTest(ctx context.Context, interval time.Duration) error 
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
+	persistTicker := time.NewTicker(30 * time.Second)
+	defer persistTicker.Stop()
+
 	for {
 		select {
 		case <-ctx.Done():
+			s.persist()
 			s.closeAllSubscribers()
 			return nil
+		case <-persistTicker.C:
+			s.persist()
 		case <-ticker.C:
 			if ctx.Err() != nil {
+				s.persist()
 				s.closeAllSubscribers()
 				return nil
 			}
