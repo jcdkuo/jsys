@@ -56,25 +56,51 @@ const colors = {
 
 let latestSample = null;
 let corePhase = 0;
+let lastMetricsAt = 0;
+let reconnectDelay = 0;
+let connectionState = "connecting";
+let activeSource = null;
+
+function setConnState(state) {
+  if (connectionState === state) return;
+  connectionState = state;
+  const label = { live: "Live", stale: "Stale", reconnecting: "Reconnecting", connecting: "Connecting" }[state] || state;
+  elements.connectionBadge.textContent = label;
+  elements.connectionBadge.classList.toggle("badge--warn", state !== "live");
+}
 
 function connect() {
+  setConnState(connectionState === "connecting" ? "connecting" : "reconnecting");
   const source = new EventSource("/events");
+  activeSource = source;
 
   source.addEventListener("ready", () => {
-    elements.connectionBadge.textContent = "Live";
-    elements.connectionBadge.classList.remove("badge--warn");
+    reconnectDelay = 0;
+    setConnState("live");
   });
 
   source.addEventListener("metrics", (event) => {
+    lastMetricsAt = Date.now();
+    setConnState("live");
     latestSample = JSON.parse(event.data);
     render(latestSample);
   });
 
   source.onerror = () => {
-    elements.connectionBadge.textContent = "Reconnecting";
-    elements.connectionBadge.classList.add("badge--warn");
+    if (activeSource !== source) return;
+    source.close();
+    activeSource = null;
+    setConnState("reconnecting");
+    reconnectDelay = Math.min(reconnectDelay ? reconnectDelay * 2 : 5000, 60000);
+    setTimeout(connect, reconnectDelay);
   };
 }
+
+setInterval(() => {
+  if (connectionState === "live" && lastMetricsAt && Date.now() - lastMetricsAt > 3000) {
+    setConnState("stale");
+  }
+}, 1000);
 
 function render(sample) {
   push(series.cpu, sample.cpu.total);
@@ -178,14 +204,26 @@ function renderCores(cores, estimated) {
     existingTag.remove();
   }
 
-  elements.coreGrid.replaceChildren(
-    ...cores.map((value) => {
-      const node = document.createElement("span");
-      node.title = `${value.toFixed(1)}%`;
-      node.style.background = `linear-gradient(to top, ${heatColor(value)} ${value}%, rgba(255,255,255,0.08) ${value}%)`;
-      return node;
-    })
-  );
+  if (elements.coreGrid.children.length !== cores.length) {
+    elements.coreGrid.replaceChildren(
+      ...cores.map(() => {
+        const block = document.createElement("span");
+        block.className = "core-block";
+        const fill = document.createElement("i");
+        fill.className = "core-fill";
+        block.appendChild(fill);
+        return block;
+      })
+    );
+  }
+
+  cores.forEach((value, i) => {
+    const block = elements.coreGrid.children[i];
+    block.title = `${value.toFixed(1)}%`;
+    const fill = block.firstChild;
+    fill.style.height = `${value}%`;
+    fill.style.background = heatColor(value);
+  });
 }
 
 function renderDisks(disks) {
@@ -204,10 +242,22 @@ function renderDisks(disks) {
 
 function renderEvents(events) {
   elements.eventCount.textContent = events.length;
-  elements.events.replaceChildren(
-    ...events.map((item) => {
-      const node = document.createElement("li");
+
+  const existing = new Map();
+  for (const child of elements.events.children) {
+    if (child.dataset.eventId) existing.set(Number(child.dataset.eventId), child);
+  }
+
+  const fragment = document.createDocumentFragment();
+  for (const item of events) {
+    let node = existing.get(item.id);
+    if (node) {
+      existing.delete(item.id);
+    } else {
+      node = document.createElement("li");
+      node.dataset.eventId = item.id;
       node.dataset.level = item.level;
+      node.classList.add("event-new");
       node.innerHTML = `
         <div>
           <time>${new Date(item.time).toLocaleTimeString()}</time>
@@ -215,9 +265,12 @@ function renderEvents(events) {
           <p>${escapeHtml(item.detail)}</p>
         </div>
       `;
-      return node;
-    })
-  );
+      setTimeout(() => node.classList.remove("event-new"), 700);
+    }
+    fragment.appendChild(node);
+  }
+
+  elements.events.replaceChildren(fragment);
 }
 
 function renderProcesses(processes) {
