@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git checkout *)",
+      "Bash(go test *)",
+      "Bash(go vet *)",
+      "Bash(go build *)",
+      "Bash(git rm *)",
+      "Bash(git *)",
+      "Bash(echo \"STASH EXIT: $?\")",
+      "Bash(xargs ls -la)",
+      "Bash(time lsof *)",
+      "Bash(timeout 5 go run .)",
+      "Bash(curl -s http://127.0.0.1:4173/api/snapshot)",
+      "Read(//private/tmp/**)",
+      "Bash(timeout 10 go run test_streamer.go)",
+      "Bash(echo \"Exit code: $?\")",
+      "Bash(timeout 3 ./jsys)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('perCoreEstimated=', d['cpu']['perCoreEstimated']\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d['cpu'], indent=2\\)\\)\")",
+      "Bash(pkill -f jsys)",
+      "Bash(node -c public/app.js)",
+      "Bash(npm run *)",
+      "Bash(node -c /Users/jerry.jckuo/repos/jsys/public/app.js)",
+      "Bash(sw_vers -productVersion)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(pkill -f \"jsys-test|go-build|go run \\\\.\")",
+      "Bash(pkill -f /tmp/jsys-test)",
+      "Bash(kill -SIGTERM 31894)"
+    ]
+  }
+}
